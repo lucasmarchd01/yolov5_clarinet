@@ -3,9 +3,7 @@ import numpy as np
 import time
 
 # Load the pre-trained YOLO model
-net = cv2.dnn.readNet(
-    "yolov3.weights", "yolov3.cfg"
-)  # Update with your YOLO model weights and configuration
+net = cv2.dnn.readNetFromONNX("yolov5.onnx")
 layer_names = net.getUnconnectedOutLayersNames()
 
 # Initialize video capture
