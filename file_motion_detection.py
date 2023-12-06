@@ -234,6 +234,31 @@ def overlay_movement_direction(video_path, output_path, trajectory):
     print(f"Overlay video saved at: {output_path}")
 
 
+def get_frame_timestamps(video_path):
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    frame_timestamps = [
+        frame_number / fps for frame_number in range(1, total_frames + 1)
+    ]
+
+    cap.release()
+    return frame_timestamps
+
+
+def get_total_frames(video_path):
+    cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return total_frames
+
+
+def convert_to_min_sec(timestamp):
+    minutes, seconds = divmod(timestamp, 60)
+    return f"{int(minutes):02}:{int(seconds):02}"
+
+
 def visualization(clarinet_results_directory, person_results_directory):
     clarinet_positions = read_clarinet_positions(clarinet_results_directory)
     clarinet_bell_movement = get_clarinet_trajectory(clarinet_positions)
@@ -305,11 +330,32 @@ def visualization(clarinet_results_directory, person_results_directory):
 
     # Visualization 1: Grouped Bar Chart
     all_frames = sorted(set(clarinet_frames + knee_frames + forward_backward_frames))
+    timestamps = get_frame_timestamps(
+        "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms_112BMP_Trial_003_clarinet.mp4"
+    )
+    timestamps_detected_clarinet = [
+        timestamps[frame_number - 1] for frame_number in clarinet_frames
+    ]
+    timestamps_detected_clarinet_formatted = [
+        convert_to_min_sec(timestamp) for timestamp in timestamps_detected_clarinet
+    ]
+    print(timestamps_detected_clarinet)
     plt.figure(figsize=(12, 8))
     sns.histplot(
-        x=all_frames, hue=clarinet_labels, multiple="stack", bins=50, palette="viridis"
+        x=timestamps_detected_clarinet_formatted,
+        hue=clarinet_movements,
+        multiple="stack",
+        bins=50,
+        palette="viridis",
     )
-    plt.xlabel("Frame Number")
+
+    # Set x-axis ticks at 15-second intervals
+    plt.xticks(
+        ticks=plt.xticks()[0][::10],
+        rotation=45,  # Rotate labels for better readability
+    )
+
+    plt.xlabel("Time")
     plt.ylabel("Count")
     plt.title("Grouped Bar Chart of Clarinet Movements Over Time")
     plt.show()
@@ -366,42 +412,42 @@ def visualization(clarinet_results_directory, person_results_directory):
     plt.show()
 
 
-# Directory containing YOLOv5 detection results (.txt files)
-clarinet_results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
-)
-
-clarinet_positions = read_clarinet_positions(clarinet_results_directory)
-up_down_movement = track_up_down_movement(clarinet_positions)
-# plot_up_down_movement(up_down_movement)
-# plot_2d_trajectory(clarinet_positions)
-
-
-clarinet_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms 112BMP Trial 003.mp4"
-clarinet_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms_112BMP_Trial_003_clarinet.mp4"
-clarinet_bell_trajectory = get_clarinet_trajectory(clarinet_positions)
-# overlay_movement_direction(
-#     clarinet_video_path, clarinet_output_path, clarinet_bell_trajectory
+# # Directory containing YOLOv5 detection results (.txt files)
+# clarinet_results_directory = (
+#     "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
 # )
 
-
-# Directory containing person detection results (.txt files)
-person_results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
-)
-person_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/Brahms 112BMP Trial 003.mp4"
-person_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9//Brahms_112BMP_Trial_003_person.mp4"
+# clarinet_positions = read_clarinet_positions(clarinet_results_directory)
+# up_down_movement = track_up_down_movement(clarinet_positions)
+# # plot_up_down_movement(up_down_movement)
+# # plot_2d_trajectory(clarinet_positions)
 
 
-person_positions = read_person_positions(person_results_directory)
+# clarinet_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms 112BMP Trial 003.mp4"
+# clarinet_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms_112BMP_Trial_003_clarinet.mp4"
+# clarinet_bell_trajectory = get_clarinet_trajectory(clarinet_positions)
+# # overlay_movement_direction(
+# #     clarinet_video_path, clarinet_output_path, clarinet_bell_trajectory
+# # )
 
-knee_bending = get_bending_trajectory(person_positions, height_change_threshold=0)
 
-forward_backward_trajectory = get_forward_backward_movement(person_positions)
+# # Directory containing person detection results (.txt files)
+# person_results_directory = (
+#     "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
+# )
+# person_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/Brahms 112BMP Trial 003.mp4"
+# person_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9//Brahms_112BMP_Trial_003_person.mp4"
 
-overlay_movement_direction(
-    person_video_path, person_output_path, forward_backward_trajectory
-)
+
+# person_positions = read_person_positions(person_results_directory)
+
+# knee_bending = get_bending_trajectory(person_positions, height_change_threshold=0)
+
+# forward_backward_trajectory = get_forward_backward_movement(person_positions)
+
+# overlay_movement_direction(
+#     person_video_path, person_output_path, forward_backward_trajectory
+# )
 
 
 clarinet_results_directory = (
