@@ -303,55 +303,94 @@ def visualization(clarinet_results_directory, person_results_directory):
     print(f"Chi-squared statistic: {chi2_stat}")
     print(f"P-value: {p_value}")
 
-    # Plot 3D confusion matrix using a series of 2D heatmaps
-    fig = plt.figure(figsize=(15, 10))
+    # Visualization 1: Grouped Bar Chart
+    all_frames = sorted(set(clarinet_frames + knee_frames + forward_backward_frames))
+    plt.figure(figsize=(12, 8))
+    sns.histplot(
+        x=all_frames, hue=clarinet_labels, multiple="stack", bins=50, palette="viridis"
+    )
+    plt.xlabel("Frame Number")
+    plt.ylabel("Count")
+    plt.title("Grouped Bar Chart of Clarinet Movements Over Time")
+    plt.show()
+
+    # Visualization 2: Separate Heatmaps for Each Movement Type
+    fig, axes = plt.subplots(1, conf_matrix.shape[2], figsize=(15, 5), sharey=True)
 
     for i in range(conf_matrix.shape[2]):
-        ax = fig.add_subplot(2, 2, i + 1)
         sns.heatmap(
             conf_matrix[:, :, i],
+            cmap="viridis",
             annot=True,
             fmt=".0f",
-            cmap="Blues",
             xticklabels=knee_unique_labels,
             yticklabels=clarinet_unique_labels,
-            ax=ax,
+            ax=axes[i],
         )
-        ax.set_xlabel("Knee Movement")
-        ax.set_ylabel("Clarinet Movement")
-        ax.set_title(f"Forward/Backward Movement: {forward_backward_unique_labels[i]}")
+        axes[i].set_xlabel("Knee Movement")
+        axes[i].set_ylabel("Clarinet Movement")
+        axes[i].set_title(
+            f"Forward/Backward Movement: {forward_backward_unique_labels[i]}"
+        )
 
+    plt.tight_layout()
+    plt.show()
+
+    # Visualization 3: 2D Confusion Matrix
+    # Populate the new confusion matrix
+    conf_matrix_clarinet_forward_backward = np.zeros(
+        (len(clarinet_unique_labels), len(forward_backward_unique_labels))
+    )
+
+    for clarinet, knee, forward_backward in combined_movements:
+        clarinet_index = clarinet_unique_labels.index(clarinet)
+        forward_backward_index = forward_backward_unique_labels.index(forward_backward)
+        conf_matrix_clarinet_forward_backward[
+            clarinet_index, forward_backward_index
+        ] += 1
+    # Plot 2D confusion matrix
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(
+        conf_matrix_clarinet_forward_backward,
+        annot=True,
+        fmt=".0f",
+        cmap="viridis",
+        xticklabels=forward_backward_unique_labels,
+        yticklabels=clarinet_unique_labels,
+        ax=ax,
+    )
+    ax.set_xlabel("Forward/Backward Movement")
+    ax.set_ylabel("Clarinet Movement")
+    ax.set_title("Clarinet Trajectory vs Forward/Backward Movement")
     plt.tight_layout()
     plt.show()
 
 
 # Directory containing YOLOv5 detection results (.txt files)
-results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp3/labels"
+clarinet_results_directory = (
+    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
 )
 
-clarinet_positions = read_clarinet_positions(results_directory)
+clarinet_positions = read_clarinet_positions(clarinet_results_directory)
 up_down_movement = track_up_down_movement(clarinet_positions)
 # plot_up_down_movement(up_down_movement)
 # plot_2d_trajectory(clarinet_positions)
 
 
-video_path = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp2/Paul_brahms.mp4"
-)
-output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp2/Paul_brahms_movement_threshold.mp4"
+clarinet_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms 112BMP Trial 003.mp4"
+clarinet_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/Brahms_112BMP_Trial_003_clarinet.mp4"
 clarinet_bell_trajectory = get_clarinet_trajectory(clarinet_positions)
-# overlay_movement_direction(video_path, output_path, clarinet_bell_trajectory)
+# overlay_movement_direction(
+#     clarinet_video_path, clarinet_output_path, clarinet_bell_trajectory
+# )
 
 
 # Directory containing person detection results (.txt files)
 person_results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp6/labels"
+    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
 )
-person_video_path = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp6/Romi_brahms.mp4"
-)
-output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp6/Romi_brahms_movement_forback.mp4"
+person_video_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/Brahms 112BMP Trial 003.mp4"
+person_output_path = "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9//Brahms_112BMP_Trial_003_person.mp4"
 
 
 person_positions = read_person_positions(person_results_directory)
@@ -360,15 +399,17 @@ knee_bending = get_bending_trajectory(person_positions, height_change_threshold=
 
 forward_backward_trajectory = get_forward_backward_movement(person_positions)
 
-# overlay_movement_direction(person_video_path, output_path, forward_backward_trajectory)
+overlay_movement_direction(
+    person_video_path, person_output_path, forward_backward_trajectory
+)
 
 
 clarinet_results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp4/labels"
+    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp10/labels"
 )
 
 person_results_directory = (
-    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp7/labels"
+    "/Users/lucasmarch/Projects/MUMT620_Project/yolov5/runs/detect/exp9/labels"
 )
 
 visualization(clarinet_results_directory, person_results_directory)
